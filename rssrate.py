@@ -4,9 +4,11 @@ import sys
 import subprocess
 
 
-def get_rate_display(rate_b):
-    rate_units = ['B/s', 'kB/s', 'MB/s', 'GB/s']
+RATE_UNITS = ['B/s', 'kB/s', 'MB/s', 'GB/s']
 
+SIZE_UNITS = ['B', 'kB', 'MB', 'GB']
+
+def humanize(rate_b, units=RATE_UNITS):
     rates = [rate_b]
     rate_kb = rate_b / 1024.
     if rate_kb > 1:
@@ -21,7 +23,7 @@ def get_rate_display(rate_b):
                 rates.append(rate_gb)
 
     return [
-        '%s %s' % (rate, unit) for rate, unit in zip(rates, rate_units[:len(rates)])
+        '%.2f %s' % (rate, unit) for rate, unit in zip(rates, units[:len(rates)])
     ]
 
 
@@ -50,10 +52,18 @@ def main(pid, sampling_interval_sec):
 
         prev_size_bytes = size_bytes
 
-        print('\t'.join([str(time.time() - start)] + get_rate_display(rate)))
+        print('\t'.join(
+            ['%.2f' % (time.time() - start)] +
+            humanize(rate, RATE_UNITS) +
+            [humanize(size_bytes, SIZE_UNITS)[-1]]
+        ))
         time.sleep(sampling_interval_sec)
 
 
 if __name__ == '__main__':
     pid = sys.argv[1]
-    main(pid, 1.0)
+    try:
+        main(pid, 1.0)
+    except KeyboardInterrupt:
+        print('Exiting...')
+        sys.exit(0)
